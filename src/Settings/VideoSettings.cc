@@ -19,7 +19,6 @@ constexpr const char* kAdditionalVideoSourceIdsKey = "ids";
 constexpr const char* kAdditionalVideoSourceNameKey = "name";
 constexpr const char* kAdditionalVideoSourceTypeKey = "videoSource";
 constexpr const char* kAdditionalVideoSourceUriKey = "uri";
-constexpr const char* kAdditionalVideoSourceStreamEnabledKey = "streamEnabled";
 constexpr const char* kAdditionalVideoSourceLowLatencyKey = "lowLatencyMode";
 constexpr const char* kAdditionalVideoSourceRtpJitterLatencyKey = "rtpJitterLatencyMs";
 constexpr const char* kAdditionalVideoSourceRtspAutoReconnectKey = "rtspAutoReconnect";
@@ -146,18 +145,6 @@ void AdditionalVideoSourceSettings::setUri(const QString& uri)
     emit dirtyChanged(true);
 }
 
-void AdditionalVideoSourceSettings::setStreamEnabled(bool streamEnabled)
-{
-    if (streamEnabled == _streamEnabled) {
-        return;
-    }
-
-    _streamEnabled = streamEnabled;
-    _save();
-    emit streamEnabledChanged();
-    emit dirtyChanged(true);
-}
-
 void AdditionalVideoSourceSettings::setLowLatencyMode(bool lowLatencyMode)
 {
     if (lowLatencyMode == _lowLatencyMode) {
@@ -205,7 +192,6 @@ void AdditionalVideoSourceSettings::_load()
     _name = settings.value(kAdditionalVideoSourceNameKey, _name).toString();
     _videoSource = settings.value(kAdditionalVideoSourceTypeKey, _videoSource).toString();
     _uri = settings.value(kAdditionalVideoSourceUriKey, _uri).toString();
-    _streamEnabled = settings.value(kAdditionalVideoSourceStreamEnabledKey, _streamEnabled).toBool();
     _lowLatencyMode = settings.value(kAdditionalVideoSourceLowLatencyKey, _lowLatencyMode).toBool();
     _rtpJitterLatencyMs = std::max(0, settings.value(kAdditionalVideoSourceRtpJitterLatencyKey, _rtpJitterLatencyMs).toInt());
     _rtspAutoReconnect = settings.value(kAdditionalVideoSourceRtspAutoReconnectKey, _rtspAutoReconnect).toBool();
@@ -221,7 +207,6 @@ void AdditionalVideoSourceSettings::_save()
     settings.setValue(kAdditionalVideoSourceNameKey, _name);
     settings.setValue(kAdditionalVideoSourceTypeKey, _videoSource);
     settings.setValue(kAdditionalVideoSourceUriKey, _uri);
-    settings.setValue(kAdditionalVideoSourceStreamEnabledKey, _streamEnabled);
     settings.setValue(kAdditionalVideoSourceLowLatencyKey, _lowLatencyMode);
     settings.setValue(kAdditionalVideoSourceRtpJitterLatencyKey, _rtpJitterLatencyMs);
     settings.setValue(kAdditionalVideoSourceRtspAutoReconnectKey, _rtspAutoReconnect);

@@ -62,7 +62,7 @@ public:
     Q_INVOKABLE void stopRecording();
     Q_INVOKABLE void stopVideo();
     Q_INVOKABLE void ensureAdditionalVideoReceiver(const QString &receiverName, MavlinkCameraControlInterface *camera);
-    Q_INVOKABLE void ensureAdditionalVideoSourceReceiver(const QString &receiverName, const QString &videoSource, const QString &uri, bool streamEnabled, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect);
+    Q_INVOKABLE void ensureAdditionalVideoSourceReceiver(const QString &receiverName, const QString &videoSource, const QString &uri, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect);
     Q_INVOKABLE void restartAdditionalVideoReceiver(const QString &receiverName);
     Q_INVOKABLE void releaseAdditionalVideoReceiver(const QString &receiverName);
     Q_INVOKABLE bool receiverDecoding(const QString &receiverName) const;
@@ -128,7 +128,7 @@ private:
     bool _updateAutoStream(VideoReceiver *receiver);
     bool _updateUVC(VideoReceiver *receiver);
     bool _updateSettings(VideoReceiver *receiver);
-    bool _updateManualVideoSource(VideoReceiver *receiver, const QString &videoSource, const QString &uri, bool streamEnabled, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect);
+    bool _updateManualVideoSource(VideoReceiver *receiver, const QString &videoSource, const QString &uri, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect);
     bool _updateVideoUri(VideoReceiver *receiver, const QString &uri);
     bool _isPrimaryVideoReceiver(const VideoReceiver *receiver) const;
     bool _isAdditionalCameraVideoReceiver(const VideoReceiver *receiver) const;

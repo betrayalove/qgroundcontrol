@@ -17,7 +17,6 @@ public:
     Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)
     Q_PROPERTY(QString videoSource READ videoSource WRITE setVideoSource NOTIFY videoSourceChanged)
     Q_PROPERTY(QString uri READ uri WRITE setUri NOTIFY uriChanged)
-    Q_PROPERTY(bool streamEnabled READ streamEnabled WRITE setStreamEnabled NOTIFY streamEnabledChanged)
     Q_PROPERTY(bool lowLatencyMode READ lowLatencyMode WRITE setLowLatencyMode NOTIFY lowLatencyModeChanged)
     Q_PROPERTY(int rtpJitterLatencyMs READ rtpJitterLatencyMs WRITE setRtpJitterLatencyMs NOTIFY rtpJitterLatencyMsChanged)
     Q_PROPERTY(bool rtspAutoReconnect READ rtspAutoReconnect WRITE setRtspAutoReconnect NOTIFY rtspAutoReconnectChanged)
@@ -28,7 +27,6 @@ public:
     QString name() const { return _name; }
     QString videoSource() const { return _videoSource; }
     QString uri() const { return _uri; }
-    bool streamEnabled() const { return _streamEnabled; }
     bool lowLatencyMode() const { return _lowLatencyMode; }
     int rtpJitterLatencyMs() const { return _rtpJitterLatencyMs; }
     bool rtspAutoReconnect() const { return _rtspAutoReconnect; }
@@ -38,7 +36,6 @@ public:
     void setName(const QString& name);
     void setVideoSource(const QString& videoSource);
     void setUri(const QString& uri);
-    void setStreamEnabled(bool streamEnabled);
     void setLowLatencyMode(bool lowLatencyMode);
     void setRtpJitterLatencyMs(int rtpJitterLatencyMs);
     void setRtspAutoReconnect(bool rtspAutoReconnect);
@@ -48,7 +45,6 @@ signals:
     void nameChanged();
     void videoSourceChanged();
     void uriChanged();
-    void streamEnabledChanged();
     void lowLatencyModeChanged();
     void rtpJitterLatencyMsChanged();
     void rtspAutoReconnectChanged();
@@ -62,7 +58,6 @@ private:
     QString _name;
     QString _videoSource;
     QString _uri;
-    bool _streamEnabled = true;
     bool _lowLatencyMode = false;
     int _rtpJitterLatencyMs = 80;
     bool _rtspAutoReconnect = true;

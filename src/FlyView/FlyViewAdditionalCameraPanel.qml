@@ -3,7 +3,7 @@ import QtQuick
 import QGroundControl
 import QGroundControl.Controls
 
-Column {
+Row {
     id: root
 
     property Item pipView
@@ -45,7 +45,6 @@ Column {
 
             readonly property var camera: root._cameraManager ? root._cameraManager.cameras.get(index) : null
             readonly property bool isPrimaryCamera: root._cameraManager && index === root._cameraManager.currentCamera
-            readonly property bool hasStream: root.streamRevision >= 0 && camera && camera.currentStreamInstance && camera.currentStreamInstance.uri !== ""
             readonly property string receiverName: root._receiverName(camera)
 
             show: root._videoEnabled && !isPrimaryCamera
@@ -141,7 +140,6 @@ Column {
                 QGroundControl.videoManager.ensureAdditionalVideoSourceReceiver(receiverName,
                                                                                 source.videoSource,
                                                                                 source.uri,
-                                                                                root._videoEnabled,
                                                                                 source.lowLatencyMode,
                                                                                 source.rtpJitterLatencyMs,
                                                                                 source.rtspAutoReconnect)

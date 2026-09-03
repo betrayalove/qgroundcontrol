@@ -356,7 +356,7 @@ void VideoManager::ensureAdditionalVideoReceiver(const QString &receiverName, Ma
     _updateAdditionalVideoReceiver(receiver);
 }
 
-void VideoManager::ensureAdditionalVideoSourceReceiver(const QString &receiverName, const QString &videoSource, const QString &uri, bool streamEnabled, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect)
+void VideoManager::ensureAdditionalVideoSourceReceiver(const QString &receiverName, const QString &videoSource, const QString &uri, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect)
 {
     if (!receiverName.startsWith(QLatin1String(kAdditionalVideoSourceReceiverPrefix))) {
         return;
@@ -376,7 +376,7 @@ void VideoManager::ensureAdditionalVideoSourceReceiver(const QString &receiverNa
         }
     }
 
-    const bool changed = _updateManualVideoSource(receiver, videoSource, uri, streamEnabled, lowLatency, rtpJitterLatencyMs, rtspAutoReconnect);
+    const bool changed = _updateManualVideoSource(receiver, videoSource, uri, lowLatency, rtpJitterLatencyMs, rtspAutoReconnect);
     if (!_primaryVideoSourceEnabled() || receiver->uri().isEmpty()) {
         _stopReceiver(receiver);
     } else if (changed) {
@@ -869,7 +869,7 @@ bool VideoManager::_updateSettings(VideoReceiver *receiver)
     return settingsChanged;
 }
 
-bool VideoManager::_updateManualVideoSource(VideoReceiver *receiver, const QString &videoSource, const QString &uri, bool streamEnabled, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect)
+bool VideoManager::_updateManualVideoSource(VideoReceiver *receiver, const QString &videoSource, const QString &uri, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect)
 {
     if (!_isAdditionalVideoSourceReceiver(receiver)) {
         return false;
@@ -893,7 +893,7 @@ bool VideoManager::_updateManualVideoSource(VideoReceiver *receiver, const QStri
     }
 
     QString receiverUri;
-    if (streamEnabled) {
+    if (_primaryVideoSourceEnabled()) {
         if ((videoSource == VideoSettings::videoSourceUDPH264) && !uri.isEmpty()) {
             receiverUri = uri.contains(QStringLiteral("://")) ? uri : QStringLiteral("udp://%1").arg(uri);
         } else if ((videoSource == VideoSettings::videoSourceUDPH265) && !uri.isEmpty()) {
