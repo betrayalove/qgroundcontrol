@@ -24,7 +24,8 @@ RowLayout {
     readonly property int _manualSourceCount: _manualSources ? _manualSources.count : 0
     readonly property int _displayItemCount: Math.max(0, _cameraCount - 1) + _manualSourceCount
 
-    width: _referenceWidth
+    width: implicitWidth
+    height: implicitHeight
     spacing: _margins
     visible: _videoEnabled && _displayItemCount > 0 && !QGroundControl.videoManager.fullScreen
     z: QGroundControl.zOrderWidgets
