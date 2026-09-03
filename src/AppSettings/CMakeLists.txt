@@ -68,6 +68,7 @@ qt_add_qml_module(AppSettingsModule
         ${_generated_qml}
 
         # Hand-coded pages and components
+        AdditionalVideoSourceSettings.qml
         AppLogging.qml
         BluetoothSettings.qml
         DebugWindow.qml

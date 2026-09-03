@@ -14,6 +14,7 @@ Item {
     property var    item2:                  null    // Optional, may come and go
     property string item1IsFullSettingsKey          // Settings key to save whether item1 was saved in full mode
     property bool   show:                   true
+    property var    swapOverride:           null
 
     readonly property string _pipExpandedSettingsKey: "IsPIPVisible"
 
@@ -85,6 +86,13 @@ Item {
         QGroundControl.saveBoolGlobalSetting(item1IsFullSettingsKey, item1IsFull)
     }
 
+    function _handlePipClick() {
+        if (swapOverride && swapOverride()) {
+            return
+        }
+        _swapPip()
+    }
+
     function _setPipIsExpanded(isExpanded) {
         QGroundControl.saveBoolGlobalSetting(_pipExpandedSettingsKey, isExpanded)
         _isExpanded = isExpanded
@@ -115,7 +123,7 @@ Item {
         enabled:        _isExpanded
         preventStealing: true
         hoverEnabled:   true
-        onClicked:      _swapPip()
+        onClicked:      _handlePipClick()
     }
 
     // MouseArea to drag in order to resize the PiP area

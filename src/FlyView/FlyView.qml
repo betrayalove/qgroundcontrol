@@ -46,6 +46,8 @@ Item {
     property real   _rightPanelWidth:       ScreenTools.defaultFontPixelWidth * 30
     property var    _mapControl:            mapEngineLoader.item
     property real   _widgetMargin:          ScreenTools.defaultFontPixelWidth * 0.75
+    property var    _additionalVideoFullWindow: null
+    property var    _additionalVideoSwappedItem: null
 
     property real   _fullItemZorder:    0
     property real   _pipItemZorder:     QGroundControl.zOrderWidgets
@@ -53,6 +55,50 @@ Item {
     function _calcCenterViewPort() {
         var newToolInset = Qt.rect(0, 0, width, height)
         toolstrip.adjustToolInset(newToolInset)
+    }
+
+    function promoteAdditionalVideoWindow(window) {
+        if (!window || window.fullMode) {
+            return
+        }
+        restoreAdditionalVideoWindow()
+
+        var fullItem = _pipView._fullItem
+        if (!fullItem || !fullItem.pipState) {
+            return
+        }
+
+        _additionalVideoFullWindow = window
+        _additionalVideoSwappedItem = fullItem
+        window.swappedPipItem = fullItem
+        fullItem.pipState.pipView = window
+        fullItem.pipState.state = fullItem.pipState.pipState
+        window.fullMode = true
+    }
+
+    function restoreAdditionalVideoWindow() {
+        if (!_additionalVideoFullWindow) {
+            return false
+        }
+
+        var window = _additionalVideoFullWindow
+        var swappedItem = _additionalVideoSwappedItem
+
+        window.fullMode = false
+        window.swappedPipItem = null
+
+        if (swappedItem && swappedItem.pipState) {
+            swappedItem.pipState.pipView = _pipView
+            swappedItem.pipState.state = swappedItem.pipState.fullState
+        }
+
+        _additionalVideoFullWindow = null
+        _additionalVideoSwappedItem = null
+        return true
+    }
+
+    function _pipSwapOverride() {
+        return restoreAdditionalVideoWindow()
     }
 
     function dropMainStatusIndicatorTool() {
@@ -132,10 +178,23 @@ Item {
             show:                   QGroundControl.videoManager.hasVideo && !QGroundControl.videoManager.fullScreen &&
                                         (videoControl.pipState.state === videoControl.pipState.pipState ||
                                          (_mapControl && _mapControl.pipState.state === _mapControl.pipState.pipState))
+            swapOverride:           _pipSwapOverride
             z:                      QGroundControl.zOrderWidgets
 
             property real leftEdgeBottomInset: visible ? width + anchors.margins : 0
             property real bottomEdgeLeftInset: visible ? height + anchors.margins : 0
+        }
+
+        FlyViewAdditionalCameraPanel {
+            id:                 additionalCameraPanel
+            pipView:            _pipView
+            promoteHandler:     promoteAdditionalVideoWindow
+            restoreHandler:     restoreAdditionalVideoWindow
+            fullReferenceItem:  mapHolder
+            fullZ:              _fullItemZorder + 1
+            anchors.left:       _pipView.visible ? _pipView.right : parent.left
+            anchors.bottom:     parent.bottom
+            anchors.margins:    _toolsMargin
         }
 
         FlyViewWidgetLayer {

@@ -5,25 +5,18 @@ import QGroundControl
 
 Rectangle {
     id:                 _root
-    width:              parent.width
-    height:             parent.height
+    width:              parent ? parent.width : 0
+    height:             parent ? parent.height : 0
     implicitWidth:      videoOutput.implicitWidth
-    implicitHeight:     videoOutput.implicitHeight   
+    implicitHeight:     videoOutput.implicitHeight
     color:              Qt.rgba(0,0,0,0.75)
     clip:               true
     anchors.centerIn:   parent
-    visible:            _videoManager.isUvc
+    visible:            cameraActive
 
     property var _videoManager: QGroundControl.videoManager
-
-    function adjustAspectRatio() {
-        //-- Set aspect ratio
-        var resolution = camera.cameraFormat.resolution
-        if (resolution.height > 0 && resolution.width > 0) {
-            var aspectRatio = resolution.width / resolution.height
-            _root.height = parent.height * aspectRatio
-        }
-    }
+    property string cameraDeviceId: _videoManager.uvcVideoSourceID
+    property bool cameraActive: _videoManager.isUvc
 
     MediaDevices {
         id: mediaDevices
@@ -42,20 +35,8 @@ Rectangle {
     CaptureSession {
         camera: Camera {
             id:             camera
-            cameraDevice:   mediaDevices.findCameraDevice(_videoManager.uvcVideoSourceID)
-            active:         _videoManager.isUvc
-
-            onCameraDeviceChanged: {
-                if (active) {
-                    adjustAspectRatio()
-                }
-            }
-
-            onActiveChanged: {
-                if (active) {
-                    adjustAspectRatio()
-                }
-            }
+            cameraDevice:   mediaDevices.findCameraDevice(_root.cameraDeviceId)
+            active:         _root.cameraActive
         }
         videoOutput: videoOutput
     }

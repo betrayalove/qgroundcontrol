@@ -4,9 +4,11 @@
 #include <chrono>
 
 #include <QtCore/QFuture>
+#include <QtCore/QHash>
 #include <QtCore/QMutex>
 #include <QtCore/QPromise>
 #include <QtCore/QObject>
+#include <QtCore/QPointer>
 #include <QtCore/QSize>
 #include <QtQmlIntegration/QtQmlIntegration>
 
@@ -15,6 +17,7 @@
 #endif
 
 class QQuickWindow;
+class MavlinkCameraControlInterface;
 class SubtitleWriter;
 class Vehicle;
 class VideoReceiver;
@@ -25,6 +28,7 @@ class VideoManager : public QObject
     Q_OBJECT
     QML_ELEMENT
     QML_UNCREATABLE("")
+    Q_MOC_INCLUDE("MavlinkCameraControlInterface.h")
     Q_MOC_INCLUDE("Vehicle.h")
 
     Q_PROPERTY(bool     autoStreamConfigured    READ autoStreamConfigured                       NOTIFY autoStreamConfiguredChanged)
@@ -57,6 +61,11 @@ public:
     Q_INVOKABLE void startVideo();
     Q_INVOKABLE void stopRecording();
     Q_INVOKABLE void stopVideo();
+    Q_INVOKABLE void ensureAdditionalVideoReceiver(const QString &receiverName, MavlinkCameraControlInterface *camera);
+    Q_INVOKABLE void ensureAdditionalVideoSourceReceiver(const QString &receiverName, const QString &videoSource, const QString &uri, bool streamEnabled, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect);
+    Q_INVOKABLE void restartAdditionalVideoReceiver(const QString &receiverName);
+    Q_INVOKABLE void releaseAdditionalVideoReceiver(const QString &receiverName);
+    Q_INVOKABLE bool receiverDecoding(const QString &receiverName) const;
 
     void init(QQuickWindow *mainWindow);
     void startVideoBackendInit();
@@ -92,6 +101,7 @@ signals:
     void isUvcChanged();
     void recordingChanged(bool recording);
     void recordingStarted(const QString &filename);
+    void receiverDecodingChanged(const QString &receiverName);
     void streamingChanged();
     void uvcVideoSourceIDChanged();
     void videoSizeChanged();
@@ -118,14 +128,24 @@ private:
     bool _updateAutoStream(VideoReceiver *receiver);
     bool _updateUVC(VideoReceiver *receiver);
     bool _updateSettings(VideoReceiver *receiver);
+    bool _updateManualVideoSource(VideoReceiver *receiver, const QString &videoSource, const QString &uri, bool streamEnabled, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect);
     bool _updateVideoUri(VideoReceiver *receiver, const QString &uri);
+    bool _isPrimaryVideoReceiver(const VideoReceiver *receiver) const;
+    bool _isAdditionalCameraVideoReceiver(const VideoReceiver *receiver) const;
+    bool _isAdditionalVideoSourceReceiver(const VideoReceiver *receiver) const;
+    bool _isAdditionalVideoReceiver(const VideoReceiver *receiver) const;
+    bool _primaryVideoSourceEnabled() const;
+    VideoReceiver *_findVideoReceiver(const QString &receiverName) const;
     void _restartAllVideos();
     void _restartVideo(VideoReceiver *receiver);
     void _startReceiver(VideoReceiver *receiver);
     void _stopReceiver(VideoReceiver *receiver);
+    void _updateAdditionalVideoReceiver(VideoReceiver *receiver);
     static void _cleanupOldVideos();
 
     QList<VideoReceiver*> _videoReceivers;
+    QHash<QString, QPointer<MavlinkCameraControlInterface>> _additionalVideoReceiverCameras;
+    QHash<QString, QMetaObject::Connection> _additionalVideoReceiverConnections;
     SubtitleWriter *_subtitleWriter = nullptr;
     VideoSettings *_videoSettings = nullptr;
     QQuickWindow *_mainWindow = nullptr;

@@ -4,7 +4,10 @@ import QtMultimedia
 import QGroundControl
 
 VideoOutput {
-    objectName: "videoContent"
+    property string videoObjectName: "videoContent"
+    property bool grabImages: videoObjectName === "videoContent"
+
+    objectName: videoObjectName
 
     // Do NOT set `orientation` here — VideoOutput composes orientation on top of the
     // QVideoFrame's own rotation()/mirrored() metadata that qgcqvideosink forwards from
@@ -18,6 +21,7 @@ VideoOutput {
 
     Connections {
         target: QGroundControl.videoManager
+        enabled: grabImages
         function onImageFileChanged(filename) {
             grabToImage(function(result) {
                 if (!result.saveToFile(filename)) {

@@ -23,6 +23,8 @@ qt_add_qml_module(FlyViewModule
         FlyViewAdditionalActionsList.qml
         FlyViewAdditionalActionsPanel.qml
         FlyViewAdditionalCustomActionsList.qml
+        FlyViewAdditionalCameraPanel.qml
+        FlyViewAdditionalVideoWindow.qml
         FlyViewBottomRightRowLayout.qml
         FlyViewCustomLayer.qml
         FlyViewGeoMap.qml

@@ -1,8 +1,72 @@
 #pragma once
 
+#include <QtCore/QStringList>
 #include <QtQmlIntegration/QtQmlIntegration>
 
+#include "QmlObjectListModel.h"
 #include "SettingsGroup.h"
+
+class AdditionalVideoSourceSettings : public QObject
+{
+    Q_OBJECT
+
+public:
+    AdditionalVideoSourceSettings(int sourceId, QObject* parent = nullptr);
+
+    Q_PROPERTY(int sourceId READ sourceId CONSTANT)
+    Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)
+    Q_PROPERTY(QString videoSource READ videoSource WRITE setVideoSource NOTIFY videoSourceChanged)
+    Q_PROPERTY(QString uri READ uri WRITE setUri NOTIFY uriChanged)
+    Q_PROPERTY(bool streamEnabled READ streamEnabled WRITE setStreamEnabled NOTIFY streamEnabledChanged)
+    Q_PROPERTY(bool lowLatencyMode READ lowLatencyMode WRITE setLowLatencyMode NOTIFY lowLatencyModeChanged)
+    Q_PROPERTY(int rtpJitterLatencyMs READ rtpJitterLatencyMs WRITE setRtpJitterLatencyMs NOTIFY rtpJitterLatencyMsChanged)
+    Q_PROPERTY(bool rtspAutoReconnect READ rtspAutoReconnect WRITE setRtspAutoReconnect NOTIFY rtspAutoReconnectChanged)
+    Q_PROPERTY(QString receiverName READ receiverName CONSTANT)
+    Q_PROPERTY(bool dirty READ dirty NOTIFY dirtyChanged)
+
+    int sourceId() const { return _sourceId; }
+    QString name() const { return _name; }
+    QString videoSource() const { return _videoSource; }
+    QString uri() const { return _uri; }
+    bool streamEnabled() const { return _streamEnabled; }
+    bool lowLatencyMode() const { return _lowLatencyMode; }
+    int rtpJitterLatencyMs() const { return _rtpJitterLatencyMs; }
+    bool rtspAutoReconnect() const { return _rtspAutoReconnect; }
+    QString receiverName() const;
+    bool dirty() const { return false; }
+
+    void setName(const QString& name);
+    void setVideoSource(const QString& videoSource);
+    void setUri(const QString& uri);
+    void setStreamEnabled(bool streamEnabled);
+    void setLowLatencyMode(bool lowLatencyMode);
+    void setRtpJitterLatencyMs(int rtpJitterLatencyMs);
+    void setRtspAutoReconnect(bool rtspAutoReconnect);
+    void removeSettings();
+
+signals:
+    void nameChanged();
+    void videoSourceChanged();
+    void uriChanged();
+    void streamEnabledChanged();
+    void lowLatencyModeChanged();
+    void rtpJitterLatencyMsChanged();
+    void rtspAutoReconnectChanged();
+    void dirtyChanged(bool dirty);
+
+private:
+    void _load();
+    void _save();
+
+    int _sourceId = 0;
+    QString _name;
+    QString _videoSource;
+    QString _uri;
+    bool _streamEnabled = true;
+    bool _lowLatencyMode = false;
+    int _rtpJitterLatencyMs = 80;
+    bool _rtspAutoReconnect = true;
+};
 
 class VideoSettings : public SettingsGroup
 {
@@ -42,6 +106,9 @@ public:
     Q_PROPERTY(QString  tcpVideoSource          READ tcpVideoSource         CONSTANT)
     Q_PROPERTY(QString  mpegtsVideoSource       READ mpegtsVideoSource      CONSTANT)
     Q_PROPERTY(QString  disabledVideoSource     READ disabledVideoSource    CONSTANT)
+    Q_PROPERTY(QStringList additionalVideoSourceTypes READ additionalVideoSourceTypes CONSTANT)
+    Q_PROPERTY(QStringList additionalVideoSourceTypeNames READ additionalVideoSourceTypeNames CONSTANT)
+    Q_PROPERTY(QmlObjectListModel* additionalVideoSources READ additionalVideoSources NOTIFY additionalVideoSourcesChanged)
 
     bool     streamConfigured       ();
     QString  rtspVideoSource        () { return videoSourceRTSP; }
@@ -50,6 +117,14 @@ public:
     QString  tcpVideoSource         () { return videoSourceTCP; }
     QString  mpegtsVideoSource      () { return videoSourceMPEGTS; }
     QString  disabledVideoSource    () { return videoDisabled; }
+    QStringList additionalVideoSourceTypes();
+    QStringList additionalVideoSourceTypeNames();
+    QmlObjectListModel* additionalVideoSources() { return &_additionalVideoSources; }
+
+    Q_INVOKABLE void addAdditionalVideoSource();
+    Q_INVOKABLE void removeAdditionalVideoSource(int index);
+    Q_INVOKABLE bool additionalVideoSourceIsUvc(const QString& videoSource) const;
+    Q_INVOKABLE bool additionalVideoSourceUsesUri(const QString& videoSource) const;
 
     /// Remove hardware forced-decoder options absent from the running GStreamer registry, and
     /// reset the active choice to Default if it was pruned. Call after the video backend has
@@ -71,6 +146,7 @@ public:
 
 signals:
     void streamConfiguredChanged    (bool configured);
+    void additionalVideoSourcesChanged();
 
 private slots:
     void _configChanged             (QVariant value);
@@ -78,8 +154,12 @@ private slots:
 private:
     void _setDefaults               ();
     void _setForceVideoDecodeList();
+    void _loadAdditionalVideoSources();
+    void _saveAdditionalVideoSourceIds() const;
 
 private:
     bool _noVideo = false;
+    QmlObjectListModel _additionalVideoSources;
+    int _nextAdditionalVideoSourceId = 1;
 
 };

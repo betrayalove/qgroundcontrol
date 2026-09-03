@@ -48,6 +48,7 @@ class MavlinkCameraControlInterface : public FactGroup
     Q_PROPERTY(bool                 photosInVideoMode       READ photosInVideoMode                                  NOTIFY infoChanged)
     Q_PROPERTY(bool                 videoInPhotoMode        READ videoInPhotoMode                                   NOTIFY infoChanged)
     Q_PROPERTY(bool                 isBasic                 READ isBasic                                            NOTIFY infoChanged)
+    Q_PROPERTY(int                  compID                  READ compID                                             CONSTANT)
 
 
     Q_PROPERTY(CameraMode           cameraMode              READ cameraMode             WRITE setCameraMode         NOTIFY cameraModeChanged)

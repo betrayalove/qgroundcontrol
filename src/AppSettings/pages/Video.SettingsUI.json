@@ -6,6 +6,7 @@
         "autoStreamConfig": "QGroundControl.videoManager.autoStreamConfigured",
         "sourceDisabled": "videoSource === QGroundControl.settingsManager.videoSettings.disabledVideoSource",
         "isStreamSource": "QGroundControl.videoManager.isStreamSource",
+        "connectionVisible": "!sourceDisabled && !autoStreamConfig && QGroundControl.settingsManager.videoSettings.additionalVideoSourceUsesUri(videoSource)",
         "rtpLatencyVisible": "!QGroundControl.settingsManager.videoSettings.lowLatencyMode.rawValue"
     },
     "groups": [
@@ -24,7 +25,7 @@
         {
             "heading": "Connection",
             "keywords": ["rtsp", "tcp", "udp", "mpegts", "video url", "stream url"],
-            "showWhen": "!sourceDisabled && !autoStreamConfig",
+            "showWhen": "connectionVisible",
             "controls": [
                 {
                     "setting": "videoSettings.rtspUrl",
@@ -73,6 +74,12 @@
                     "setting": "videoSettings.forceVideoDecoder"
                 }
             ]
+        },
+        {
+            "heading": "Additional Video Source",
+            "keywords": ["additional video source", "camera", "stream", "second video"],
+            "showWhen": "!sourceDisabled",
+            "component": "AdditionalVideoSourceSettings"
         },
         {
             "heading": "Local Video Storage",

@@ -30,6 +30,7 @@ public:
     QString name() const { return _name; }
     QString uri() const { return _uri; }
     bool started() const { return _started; }
+    bool decoding() const { return _decoding; }
     bool lowLatency() const { return _lowLatency; }
     int rtpJitterLatencyMs() const { return _rtpJitterLatencyMs; }
     bool autoReconnect() const { return _autoReconnect; }

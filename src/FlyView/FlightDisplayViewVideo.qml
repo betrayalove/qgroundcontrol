@@ -11,6 +11,12 @@ Item {
     clip:   true
 
     property bool useSmallFont: true
+    property string videoObjectName: "videoContent"
+    property string uvcVideoSourceID: QGroundControl.videoManager.uvcVideoSourceID
+    property bool streamEnabled: QGroundControl.settingsManager.videoSettings.streamEnabled.rawValue
+    property bool streamSource: QGroundControl.videoManager.isStreamSource
+    property bool uvcSource: QGroundControl.videoManager.isUvc
+    property bool decoding: QGroundControl.videoManager.decoding
 
     property double _ar:                (cameraLoader.visible && cameraLoader.status === Loader.Ready)
                                             ? cameraLoader.item.implicitWidth / cameraLoader.item.implicitHeight
@@ -23,8 +29,8 @@ Item {
     property var    _camera:            _isCamera ? _dynamicCameras.cameras.get(_curCameraIndex) : null
     property bool   _hasZoom:           _camera && _camera.hasZoom
     property int    _fitMode:           QGroundControl.settingsManager.videoSettings.videoFit.rawValue
-    property bool   _showStreamLoader:  QGroundControl.videoManager.decoding
-    property bool   _showUvcLoader:     QGroundControl.videoManager.isUvc
+    property bool   _showStreamLoader:  streamSource
+    property bool   _showUvcLoader:     uvcSource
 
     property bool   _isMode_FIT_WIDTH:  _fitMode === 0
     property bool   _isMode_FIT_HEIGHT: _fitMode === 1
@@ -45,7 +51,7 @@ Item {
             anchors.fill:   parent
             source:         "/res/NoVideoBackground.jpg"
             fillMode:       Image.PreserveAspectCrop
-            visible:        !_showStreamLoader && !_showUvcLoader
+            visible:        !(_showStreamLoader && decoding) && !_showUvcLoader
 
             Rectangle {
                 anchors.centerIn:   parent
@@ -58,7 +64,7 @@ Item {
 
             QGCLabel {
                 id:                 noVideoLabel
-                text:               QGroundControl.settingsManager.videoSettings.streamEnabled.rawValue ? qsTr("WAITING FOR VIDEO") : qsTr("VIDEO DISABLED")
+                text:               streamEnabled ? qsTr("WAITING FOR VIDEO") : qsTr("VIDEO DISABLED")
                 font.bold:          true
                 color:              "white"
                 font.pointSize:     useSmallFont ? ScreenTools.smallFontPointSize : ScreenTools.largeFontPointSize
@@ -70,7 +76,7 @@ Item {
         id:             videoBackground
         anchors.fill:   parent
         color:          "black"
-        visible:        _showStreamLoader || _showUvcLoader
+        visible:        (_showStreamLoader && decoding) || _showUvcLoader
         function getWidth() {
             if(_ar != 0.0){
                 if(_isMode_FIT_HEIGHT
@@ -104,7 +110,7 @@ Item {
         Loader {
             id:                 videoStreamLoader
             anchors.fill:       videoContentArea
-            visible:            _showStreamLoader
+            visible:            _showStreamLoader && decoding
             sourceComponent:    videoOutputComponent
 
             property bool videoDisabled: QGroundControl.settingsManager.videoSettings.videoSource.rawValue === QGroundControl.settingsManager.videoSettings.disabledVideoSource
@@ -112,6 +118,8 @@ Item {
         Component {
             id: videoOutputComponent
             FlightDisplayViewVideoOutput {
+                videoObjectName: root.videoObjectName
+                grabImages:      root.videoObjectName === "videoContent"
             }
         }
         //-- UVC Video (USB Camera or Video Device)
@@ -119,7 +127,16 @@ Item {
             id:             cameraLoader
             anchors.fill:   videoContentArea
             visible:        _showUvcLoader
-            source:         _showUvcLoader ? "qrc:/qml/QGroundControl/FlyView/FlightDisplayViewUVC.qml" : "qrc:/qml/QGroundControl/FlyView/FlightDisplayViewDummy.qml"
+            sourceComponent: uvcOutputComponent
+        }
+
+        Component {
+            id: uvcOutputComponent
+
+            FlightDisplayViewUVC {
+                cameraDeviceId: root.uvcVideoSourceID
+                cameraActive:   root.uvcSource
+            }
         }
 
         Item {
@@ -127,7 +144,7 @@ Item {
             height:             parent.getHeight()
             width:              parent.getWidth()
             anchors.centerIn:   parent
-            visible:           _showStreamLoader || _showUvcLoader
+            visible:            (_showStreamLoader && decoding) || _showUvcLoader
 
             // grid lines
             Item {
