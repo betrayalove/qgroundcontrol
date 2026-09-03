@@ -9,6 +9,8 @@ Item {
 
     width: _pipSize
     height: _pipSize * (9 / 16)
+    implicitWidth: width
+    implicitHeight: height
     visible: show && !_windowMode
     clip: true
 

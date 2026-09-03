@@ -14,26 +14,21 @@ public:
     AdditionalVideoSourceSettings(int sourceId, QObject* parent = nullptr);
 
     Q_PROPERTY(int sourceId READ sourceId CONSTANT)
-    Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)
     Q_PROPERTY(QString videoSource READ videoSource WRITE setVideoSource NOTIFY videoSourceChanged)
     Q_PROPERTY(QString uri READ uri WRITE setUri NOTIFY uriChanged)
     Q_PROPERTY(bool lowLatencyMode READ lowLatencyMode WRITE setLowLatencyMode NOTIFY lowLatencyModeChanged)
     Q_PROPERTY(int rtpJitterLatencyMs READ rtpJitterLatencyMs WRITE setRtpJitterLatencyMs NOTIFY rtpJitterLatencyMsChanged)
     Q_PROPERTY(bool rtspAutoReconnect READ rtspAutoReconnect WRITE setRtspAutoReconnect NOTIFY rtspAutoReconnectChanged)
     Q_PROPERTY(QString receiverName READ receiverName CONSTANT)
-    Q_PROPERTY(bool dirty READ dirty NOTIFY dirtyChanged)
 
     int sourceId() const { return _sourceId; }
-    QString name() const { return _name; }
     QString videoSource() const { return _videoSource; }
     QString uri() const { return _uri; }
     bool lowLatencyMode() const { return _lowLatencyMode; }
     int rtpJitterLatencyMs() const { return _rtpJitterLatencyMs; }
     bool rtspAutoReconnect() const { return _rtspAutoReconnect; }
     QString receiverName() const;
-    bool dirty() const { return false; }
 
-    void setName(const QString& name);
     void setVideoSource(const QString& videoSource);
     void setUri(const QString& uri);
     void setLowLatencyMode(bool lowLatencyMode);
@@ -42,20 +37,17 @@ public:
     void removeSettings();
 
 signals:
-    void nameChanged();
     void videoSourceChanged();
     void uriChanged();
     void lowLatencyModeChanged();
     void rtpJitterLatencyMsChanged();
     void rtspAutoReconnectChanged();
-    void dirtyChanged(bool dirty);
 
 private:
     void _load();
     void _save();
 
     int _sourceId = 0;
-    QString _name;
     QString _videoSource;
     QString _uri;
     bool _lowLatencyMode = false;

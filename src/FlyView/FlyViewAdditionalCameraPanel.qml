@@ -1,9 +1,10 @@
 import QtQuick
+import QtQuick.Layouts
 
 import QGroundControl
 import QGroundControl.Controls
 
-Row {
+RowLayout {
     id: root
 
     property Item pipView
@@ -28,7 +29,6 @@ Row {
     visible: _videoEnabled && _displayItemCount > 0 && !QGroundControl.videoManager.fullScreen
     z: QGroundControl.zOrderWidgets
 
-    property int streamRevision: 0
     property int receiverRevision: 0
 
     function _receiverName(camera) {
@@ -46,6 +46,8 @@ Row {
             readonly property var camera: root._cameraManager ? root._cameraManager.cameras.get(index) : null
             readonly property bool isPrimaryCamera: root._cameraManager && index === root._cameraManager.currentCamera
             readonly property string receiverName: root._receiverName(camera)
+
+            Layout.alignment: Qt.AlignBottom
 
             show: root._videoEnabled && !isPrimaryCamera
             sizeReferenceItem: root.parent
@@ -115,6 +117,8 @@ Row {
             readonly property bool hasConfiguredSource: source && (isUvcSource || !usesUri || source.uri !== "")
             readonly property string receiverName: source ? source.receiverName : ""
 
+            Layout.alignment: Qt.AlignBottom
+
             show: root._videoEnabled && !!source
             sizeReferenceItem: root.parent
             fullReferenceItem: root.fullReferenceItem
@@ -178,11 +182,6 @@ Row {
                 function onRtspAutoReconnectChanged() { manualSourceDelegate.updateReceiver() }
             }
         }
-    }
-
-    Connections {
-        target: root._cameraManager
-        function onStreamChanged() { root.streamRevision++ }
     }
 
     Connections {

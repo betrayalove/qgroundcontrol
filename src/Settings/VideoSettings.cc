@@ -16,7 +16,6 @@ namespace {
 
 constexpr const char* kAdditionalVideoSourcesGroup = "AdditionalVideoSources";
 constexpr const char* kAdditionalVideoSourceIdsKey = "ids";
-constexpr const char* kAdditionalVideoSourceNameKey = "name";
 constexpr const char* kAdditionalVideoSourceTypeKey = "videoSource";
 constexpr const char* kAdditionalVideoSourceUriKey = "uri";
 constexpr const char* kAdditionalVideoSourceLowLatencyKey = "lowLatencyMode";
@@ -97,7 +96,6 @@ DECLARE_SETTINGGROUP(Video, "Video")
 AdditionalVideoSourceSettings::AdditionalVideoSourceSettings(int sourceId, QObject* parent)
     : QObject(parent)
     , _sourceId(sourceId)
-    , _name(VideoSettings::tr("Video Source %1").arg(sourceId))
     , _videoSource(VideoSettings::videoSourceUDPH264)
     , _uri(QStringLiteral("0.0.0.0:%1").arg(5600 + sourceId))
 {
@@ -109,18 +107,6 @@ QString AdditionalVideoSourceSettings::receiverName() const
     return QStringLiteral("additionalVideoSource_%1").arg(_sourceId);
 }
 
-void AdditionalVideoSourceSettings::setName(const QString& name)
-{
-    if (name == _name) {
-        return;
-    }
-
-    _name = name;
-    _save();
-    emit nameChanged();
-    emit dirtyChanged(true);
-}
-
 void AdditionalVideoSourceSettings::setVideoSource(const QString& videoSource)
 {
     if (videoSource == _videoSource) {
@@ -130,7 +116,6 @@ void AdditionalVideoSourceSettings::setVideoSource(const QString& videoSource)
     _videoSource = videoSource;
     _save();
     emit videoSourceChanged();
-    emit dirtyChanged(true);
 }
 
 void AdditionalVideoSourceSettings::setUri(const QString& uri)
@@ -142,7 +127,6 @@ void AdditionalVideoSourceSettings::setUri(const QString& uri)
     _uri = uri;
     _save();
     emit uriChanged();
-    emit dirtyChanged(true);
 }
 
 void AdditionalVideoSourceSettings::setLowLatencyMode(bool lowLatencyMode)
@@ -154,7 +138,6 @@ void AdditionalVideoSourceSettings::setLowLatencyMode(bool lowLatencyMode)
     _lowLatencyMode = lowLatencyMode;
     _save();
     emit lowLatencyModeChanged();
-    emit dirtyChanged(true);
 }
 
 void AdditionalVideoSourceSettings::setRtpJitterLatencyMs(int rtpJitterLatencyMs)
@@ -167,7 +150,6 @@ void AdditionalVideoSourceSettings::setRtpJitterLatencyMs(int rtpJitterLatencyMs
     _rtpJitterLatencyMs = rtpJitterLatencyMs;
     _save();
     emit rtpJitterLatencyMsChanged();
-    emit dirtyChanged(true);
 }
 
 void AdditionalVideoSourceSettings::setRtspAutoReconnect(bool rtspAutoReconnect)
@@ -179,7 +161,6 @@ void AdditionalVideoSourceSettings::setRtspAutoReconnect(bool rtspAutoReconnect)
     _rtspAutoReconnect = rtspAutoReconnect;
     _save();
     emit rtspAutoReconnectChanged();
-    emit dirtyChanged(true);
 }
 
 void AdditionalVideoSourceSettings::_load()
@@ -189,7 +170,6 @@ void AdditionalVideoSourceSettings::_load()
     settings.beginGroup(kAdditionalVideoSourcesGroup);
     settings.beginGroup(QString::number(_sourceId));
 
-    _name = settings.value(kAdditionalVideoSourceNameKey, _name).toString();
     _videoSource = settings.value(kAdditionalVideoSourceTypeKey, _videoSource).toString();
     _uri = settings.value(kAdditionalVideoSourceUriKey, _uri).toString();
     _lowLatencyMode = settings.value(kAdditionalVideoSourceLowLatencyKey, _lowLatencyMode).toBool();
@@ -204,7 +184,6 @@ void AdditionalVideoSourceSettings::_save()
     settings.beginGroup(kAdditionalVideoSourcesGroup);
     settings.beginGroup(QString::number(_sourceId));
 
-    settings.setValue(kAdditionalVideoSourceNameKey, _name);
     settings.setValue(kAdditionalVideoSourceTypeKey, _videoSource);
     settings.setValue(kAdditionalVideoSourceUriKey, _uri);
     settings.setValue(kAdditionalVideoSourceLowLatencyKey, _lowLatencyMode);
@@ -262,7 +241,6 @@ bool VideoSettings::additionalVideoSourceUsesUri(const QString& videoSource) con
 void VideoSettings::addAdditionalVideoSource()
 {
     AdditionalVideoSourceSettings* source = new AdditionalVideoSourceSettings(_nextAdditionalVideoSourceId++, this);
-    source->setName(tr("Video Source %1").arg(_additionalVideoSources.count() + 1));
     source->setLowLatencyMode(lowLatencyMode()->rawValue().toBool());
     source->setRtpJitterLatencyMs(static_cast<int>(std::min(rtpJitterLatencyMs()->rawValue().toUInt(), static_cast<uint>(INT_MAX))));
     source->setRtspAutoReconnect(rtspAutoReconnect()->rawValue().toBool());
