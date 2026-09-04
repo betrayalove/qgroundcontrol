@@ -12,7 +12,8 @@ ColumnLayout {
     spacing: ScreenTools.defaultFontPixelHeight
 
     readonly property var _videoSettings: QGroundControl.settingsManager.videoSettings
-    readonly property bool _primarySourceEnabled: _videoSettings.videoSource.rawValue !== _videoSettings.disabledVideoSource
+    readonly property bool _primarySourceEnabled: _videoSettings.videoSource.rawValue
+                                                  !== _videoSettings.disabledVideoSource
     readonly property real _stringFieldWidth: ScreenTools.defaultFontPixelWidth * 30
 
     function _sourceIndex(source) {
@@ -25,6 +26,10 @@ ColumnLayout {
 
     function _connectionVisible(source) {
         return source && _videoSettings.additionalVideoSourceUsesUri(source.videoSource)
+    }
+
+    function _decoderIndex(source) {
+        return source ? _videoSettings.forceVideoDecoder.enumValues.indexOf(source.forceVideoDecoder) : 0
     }
 
     function _uriLabel(source) {
@@ -124,7 +129,8 @@ ColumnLayout {
                         QGCTextField {
                             Layout.preferredWidth: root._stringFieldWidth
                             text: channel.source ? channel.source.uri : ""
-                            showUnits: channel.source && channel.source.videoSource !== root._videoSettings.rtspVideoSource
+                            showUnits: channel.source
+                                       && channel.source.videoSource !== root._videoSettings.rtspVideoSource
                             unitsLabel: qsTr("host:port")
                             onEditingFinished: {
                                 if (channel.source) {
@@ -146,10 +152,66 @@ ColumnLayout {
             SettingsGroupLayout {
                 Layout.fillWidth: true
                 heading: qsTr("Settings")
-                visible: root._sourceIsStream(channel.source) &&
-                         (root._videoSettings.lowLatencyMode.userVisible ||
-                          root._videoSettings.rtpJitterLatencyMs.userVisible ||
-                          root._videoSettings.rtspAutoReconnect.userVisible)
+                visible: root._sourceIsStream(channel.source)
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: ScreenTools.defaultFontPixelHeight / 4
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: ScreenTools.defaultFontPixelWidth * 2
+
+                        QGCLabel {
+                            Layout.fillWidth: true
+                            Layout.minimumWidth: implicitWidth
+                            text: root._videoSettings.aspectRatio.label
+                        }
+
+                        QGCTextField {
+                            Layout.preferredWidth: root._stringFieldWidth
+                            text: channel.source ? channel.source.aspectRatio.toString() : ""
+                            numericValuesOnly: true
+                            onEditingFinished: {
+                                if (channel.source) {
+                                    channel.source.aspectRatio = Number(text)
+                                }
+                            }
+                        }
+                    }
+
+                    QGCLabel {
+                        Layout.fillWidth: true
+                        text: root._videoSettings.aspectRatio.shortDescription
+                        visible: text !== ""
+                        font.pointSize: ScreenTools.smallFontPointSize
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: ScreenTools.defaultFontPixelHeight / 4
+
+                    QGCCheckBoxSlider {
+                        Layout.fillWidth: true
+                        text: root._videoSettings.disableWhenDisarmed.label
+                        checked: channel.source ? channel.source.disableWhenDisarmed : false
+                        onClicked: {
+                            if (channel.source) {
+                                channel.source.disableWhenDisarmed = checked
+                            }
+                        }
+                    }
+
+                    QGCLabel {
+                        Layout.fillWidth: true
+                        text: root._videoSettings.disableWhenDisarmed.shortDescription
+                        visible: text !== ""
+                        font.pointSize: ScreenTools.smallFontPointSize
+                        wrapMode: Text.WordWrap
+                    }
+                }
 
                 ColumnLayout {
                     Layout.fillWidth: true
@@ -179,7 +241,8 @@ ColumnLayout {
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: ScreenTools.defaultFontPixelHeight / 4
-                    visible: root._videoSettings.rtpJitterLatencyMs.userVisible && (!channel.source || !channel.source.lowLatencyMode)
+                    visible: root._videoSettings.rtpJitterLatencyMs.userVisible
+                             && (!channel.source || !channel.source.lowLatencyMode)
 
                     RowLayout {
                         Layout.fillWidth: true
@@ -233,6 +296,69 @@ ColumnLayout {
                     QGCLabel {
                         Layout.fillWidth: true
                         text: root._videoSettings.rtspAutoReconnect.shortDescription
+                        visible: text !== ""
+                        font.pointSize: ScreenTools.smallFontPointSize
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: ScreenTools.defaultFontPixelHeight / 4
+                    visible: root._videoSettings.forceCpuVideoPath.userVisible
+
+                    QGCCheckBoxSlider {
+                        Layout.fillWidth: true
+                        text: root._videoSettings.forceCpuVideoPath.label
+                        checked: channel.source ? channel.source.forceCpuVideoPath : false
+                        onClicked: {
+                            if (channel.source) {
+                                channel.source.forceCpuVideoPath = checked
+                            }
+                        }
+                    }
+
+                    QGCLabel {
+                        Layout.fillWidth: true
+                        text: root._videoSettings.forceCpuVideoPath.shortDescription
+                        visible: text !== ""
+                        font.pointSize: ScreenTools.smallFontPointSize
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: ScreenTools.defaultFontPixelHeight / 4
+                    visible: root._videoSettings.forceVideoDecoder.userVisible
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: ScreenTools.defaultFontPixelWidth * 2
+
+                        QGCLabel {
+                            Layout.fillWidth: true
+                            Layout.minimumWidth: implicitWidth
+                            text: root._videoSettings.forceVideoDecoder.label
+                        }
+
+                        QGCComboBox {
+                            Layout.preferredWidth: root._stringFieldWidth
+                            model: root._videoSettings.forceVideoDecoder.enumStrings
+                            currentIndex: Math.max(0, root._decoderIndex(channel.source))
+                            sizeToContents: true
+                            onActivated: (index) => {
+                                if (channel.source) {
+                                    channel.source.forceVideoDecoder =
+                                            root._videoSettings.forceVideoDecoder.enumValues[index]
+                                }
+                            }
+                        }
+                    }
+
+                    QGCLabel {
+                        Layout.fillWidth: true
+                        text: root._videoSettings.forceVideoDecoder.shortDescription
                         visible: text !== ""
                         font.pointSize: ScreenTools.smallFontPointSize
                         wrapMode: Text.WordWrap

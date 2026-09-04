@@ -34,6 +34,9 @@ public:
     bool lowLatency() const { return _lowLatency; }
     int rtpJitterLatencyMs() const { return _rtpJitterLatencyMs; }
     bool autoReconnect() const { return _autoReconnect; }
+    bool disableWhenDisarmed() const { return _disableWhenDisarmed; }
+    bool forceCpuVideoPath() const { return _forceCpuVideoPath; }
+    int forceVideoDecoder() const { return _forceVideoDecoder; }
     QGCVideoStreamInfo *videoStreamInfo() { return _videoStreamInfo; }
     QString recordingOutput() const { return _recordingOutput; }
 
@@ -45,6 +48,9 @@ public:
     void setLowLatency(bool lowLatency) { if (lowLatency != _lowLatency) { _lowLatency = lowLatency; emit lowLatencyChanged(_lowLatency); } }
     void setRtpJitterLatencyMs(int ms) { if (ms != _rtpJitterLatencyMs) { _rtpJitterLatencyMs = ms; emit rtpJitterLatencyMsChanged(_rtpJitterLatencyMs); } }
     void setAutoReconnect(bool enabled) { if (enabled != _autoReconnect) { _autoReconnect = enabled; emit autoReconnectChanged(_autoReconnect); } }
+    void setDisableWhenDisarmed(bool disable) { _disableWhenDisarmed = disable; }
+    void setForceCpuVideoPath(bool forceCpuVideoPath) { _forceCpuVideoPath = forceCpuVideoPath; }
+    void setForceVideoDecoder(int forceVideoDecoder) { _forceVideoDecoder = forceVideoDecoder; }
     void setVideoStreamInfo(QGCVideoStreamInfo *videoStreamInfo) { if (videoStreamInfo != _videoStreamInfo) { _videoStreamInfo = videoStreamInfo; emit videoStreamInfoChanged(); } }
 
     // QMediaFormat::FileFormat
@@ -120,6 +126,9 @@ protected:
     int _rtpJitterLatencyMs = 80;
     // Written live on the GUI thread, read on the receiver worker thread.
     std::atomic<bool> _autoReconnect = true;     ///< RTSP/UDP auto-reconnect with exponential backoff on watchdog/error.
+    bool _disableWhenDisarmed = false;
+    bool _forceCpuVideoPath = false;
+    int _forceVideoDecoder = 0;
     bool _resetVideoSink = false;
     bool _endOfStream = false;
     bool _removingDecoder = false;

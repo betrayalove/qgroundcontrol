@@ -16,32 +16,48 @@ public:
     Q_PROPERTY(int sourceId READ sourceId CONSTANT)
     Q_PROPERTY(QString videoSource READ videoSource WRITE setVideoSource NOTIFY videoSourceChanged)
     Q_PROPERTY(QString uri READ uri WRITE setUri NOTIFY uriChanged)
+    Q_PROPERTY(double aspectRatio READ aspectRatio WRITE setAspectRatio NOTIFY aspectRatioChanged)
+    Q_PROPERTY(bool disableWhenDisarmed READ disableWhenDisarmed WRITE setDisableWhenDisarmed NOTIFY disableWhenDisarmedChanged)
     Q_PROPERTY(bool lowLatencyMode READ lowLatencyMode WRITE setLowLatencyMode NOTIFY lowLatencyModeChanged)
     Q_PROPERTY(int rtpJitterLatencyMs READ rtpJitterLatencyMs WRITE setRtpJitterLatencyMs NOTIFY rtpJitterLatencyMsChanged)
     Q_PROPERTY(bool rtspAutoReconnect READ rtspAutoReconnect WRITE setRtspAutoReconnect NOTIFY rtspAutoReconnectChanged)
+    Q_PROPERTY(bool forceCpuVideoPath READ forceCpuVideoPath WRITE setForceCpuVideoPath NOTIFY forceCpuVideoPathChanged)
+    Q_PROPERTY(int forceVideoDecoder READ forceVideoDecoder WRITE setForceVideoDecoder NOTIFY forceVideoDecoderChanged)
     Q_PROPERTY(QString receiverName READ receiverName CONSTANT)
 
     int sourceId() const { return _sourceId; }
     QString videoSource() const { return _videoSource; }
     QString uri() const { return _uri; }
+    double aspectRatio() const { return _aspectRatio; }
+    bool disableWhenDisarmed() const { return _disableWhenDisarmed; }
     bool lowLatencyMode() const { return _lowLatencyMode; }
     int rtpJitterLatencyMs() const { return _rtpJitterLatencyMs; }
     bool rtspAutoReconnect() const { return _rtspAutoReconnect; }
+    bool forceCpuVideoPath() const { return _forceCpuVideoPath; }
+    int forceVideoDecoder() const { return _forceVideoDecoder; }
     QString receiverName() const;
 
     void setVideoSource(const QString& videoSource);
     void setUri(const QString& uri);
+    void setAspectRatio(double aspectRatio);
+    void setDisableWhenDisarmed(bool disableWhenDisarmed);
     void setLowLatencyMode(bool lowLatencyMode);
     void setRtpJitterLatencyMs(int rtpJitterLatencyMs);
     void setRtspAutoReconnect(bool rtspAutoReconnect);
+    void setForceCpuVideoPath(bool forceCpuVideoPath);
+    void setForceVideoDecoder(int forceVideoDecoder);
     void removeSettings();
 
 signals:
     void videoSourceChanged();
     void uriChanged();
+    void aspectRatioChanged();
+    void disableWhenDisarmedChanged();
     void lowLatencyModeChanged();
     void rtpJitterLatencyMsChanged();
     void rtspAutoReconnectChanged();
+    void forceCpuVideoPathChanged();
+    void forceVideoDecoderChanged();
 
 private:
     void _load();
@@ -50,9 +66,13 @@ private:
     int _sourceId = 0;
     QString _videoSource;
     QString _uri;
+    double _aspectRatio = 1.777777;
+    bool _disableWhenDisarmed = false;
     bool _lowLatencyMode = false;
     int _rtpJitterLatencyMs = 80;
     bool _rtspAutoReconnect = true;
+    bool _forceCpuVideoPath = false;
+    int _forceVideoDecoder = 0;
 };
 
 class VideoSettings : public SettingsGroup

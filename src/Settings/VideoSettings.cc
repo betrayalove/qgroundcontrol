@@ -18,9 +18,13 @@ constexpr const char* kAdditionalVideoSourcesGroup = "AdditionalVideoSources";
 constexpr const char* kAdditionalVideoSourceIdsKey = "ids";
 constexpr const char* kAdditionalVideoSourceTypeKey = "videoSource";
 constexpr const char* kAdditionalVideoSourceUriKey = "uri";
+constexpr const char* kAdditionalVideoSourceAspectRatioKey = "aspectRatio";
+constexpr const char* kAdditionalVideoSourceDisableWhenDisarmedKey = "disableWhenDisarmed";
 constexpr const char* kAdditionalVideoSourceLowLatencyKey = "lowLatencyMode";
 constexpr const char* kAdditionalVideoSourceRtpJitterLatencyKey = "rtpJitterLatencyMs";
 constexpr const char* kAdditionalVideoSourceRtspAutoReconnectKey = "rtspAutoReconnect";
+constexpr const char* kAdditionalVideoSourceForceCpuVideoPathKey = "forceCpuVideoPath";
+constexpr const char* kAdditionalVideoSourceForceVideoDecoderKey = "forceVideoDecoder";
 
 } // namespace
 
@@ -129,6 +133,29 @@ void AdditionalVideoSourceSettings::setUri(const QString& uri)
     emit uriChanged();
 }
 
+void AdditionalVideoSourceSettings::setAspectRatio(double aspectRatio)
+{
+    aspectRatio = std::max(0.0, aspectRatio);
+    if (qFuzzyCompare(aspectRatio, _aspectRatio)) {
+        return;
+    }
+
+    _aspectRatio = aspectRatio;
+    _save();
+    emit aspectRatioChanged();
+}
+
+void AdditionalVideoSourceSettings::setDisableWhenDisarmed(bool disableWhenDisarmed)
+{
+    if (disableWhenDisarmed == _disableWhenDisarmed) {
+        return;
+    }
+
+    _disableWhenDisarmed = disableWhenDisarmed;
+    _save();
+    emit disableWhenDisarmedChanged();
+}
+
 void AdditionalVideoSourceSettings::setLowLatencyMode(bool lowLatencyMode)
 {
     if (lowLatencyMode == _lowLatencyMode) {
@@ -163,6 +190,28 @@ void AdditionalVideoSourceSettings::setRtspAutoReconnect(bool rtspAutoReconnect)
     emit rtspAutoReconnectChanged();
 }
 
+void AdditionalVideoSourceSettings::setForceCpuVideoPath(bool forceCpuVideoPath)
+{
+    if (forceCpuVideoPath == _forceCpuVideoPath) {
+        return;
+    }
+
+    _forceCpuVideoPath = forceCpuVideoPath;
+    _save();
+    emit forceCpuVideoPathChanged();
+}
+
+void AdditionalVideoSourceSettings::setForceVideoDecoder(int forceVideoDecoder)
+{
+    if (forceVideoDecoder == _forceVideoDecoder) {
+        return;
+    }
+
+    _forceVideoDecoder = forceVideoDecoder;
+    _save();
+    emit forceVideoDecoderChanged();
+}
+
 void AdditionalVideoSourceSettings::_load()
 {
     QSettings settings;
@@ -172,9 +221,14 @@ void AdditionalVideoSourceSettings::_load()
 
     _videoSource = settings.value(kAdditionalVideoSourceTypeKey, _videoSource).toString();
     _uri = settings.value(kAdditionalVideoSourceUriKey, _uri).toString();
+    _aspectRatio = std::max(0.0, settings.value(kAdditionalVideoSourceAspectRatioKey, _aspectRatio).toDouble());
+    _disableWhenDisarmed = settings.value(kAdditionalVideoSourceDisableWhenDisarmedKey, _disableWhenDisarmed).toBool();
     _lowLatencyMode = settings.value(kAdditionalVideoSourceLowLatencyKey, _lowLatencyMode).toBool();
-    _rtpJitterLatencyMs = std::max(0, settings.value(kAdditionalVideoSourceRtpJitterLatencyKey, _rtpJitterLatencyMs).toInt());
+    _rtpJitterLatencyMs = std::max(
+        0, settings.value(kAdditionalVideoSourceRtpJitterLatencyKey, _rtpJitterLatencyMs).toInt());
     _rtspAutoReconnect = settings.value(kAdditionalVideoSourceRtspAutoReconnectKey, _rtspAutoReconnect).toBool();
+    _forceCpuVideoPath = settings.value(kAdditionalVideoSourceForceCpuVideoPathKey, _forceCpuVideoPath).toBool();
+    _forceVideoDecoder = settings.value(kAdditionalVideoSourceForceVideoDecoderKey, _forceVideoDecoder).toInt();
 }
 
 void AdditionalVideoSourceSettings::_save()
@@ -186,9 +240,13 @@ void AdditionalVideoSourceSettings::_save()
 
     settings.setValue(kAdditionalVideoSourceTypeKey, _videoSource);
     settings.setValue(kAdditionalVideoSourceUriKey, _uri);
+    settings.setValue(kAdditionalVideoSourceAspectRatioKey, _aspectRatio);
+    settings.setValue(kAdditionalVideoSourceDisableWhenDisarmedKey, _disableWhenDisarmed);
     settings.setValue(kAdditionalVideoSourceLowLatencyKey, _lowLatencyMode);
     settings.setValue(kAdditionalVideoSourceRtpJitterLatencyKey, _rtpJitterLatencyMs);
     settings.setValue(kAdditionalVideoSourceRtspAutoReconnectKey, _rtspAutoReconnect);
+    settings.setValue(kAdditionalVideoSourceForceCpuVideoPathKey, _forceCpuVideoPath);
+    settings.setValue(kAdditionalVideoSourceForceVideoDecoderKey, _forceVideoDecoder);
 }
 
 void AdditionalVideoSourceSettings::removeSettings()
@@ -241,9 +299,14 @@ bool VideoSettings::additionalVideoSourceUsesUri(const QString& videoSource) con
 void VideoSettings::addAdditionalVideoSource()
 {
     AdditionalVideoSourceSettings* source = new AdditionalVideoSourceSettings(_nextAdditionalVideoSourceId++, this);
+    source->setAspectRatio(aspectRatio()->rawValue().toDouble());
+    source->setDisableWhenDisarmed(disableWhenDisarmed()->rawValue().toBool());
     source->setLowLatencyMode(lowLatencyMode()->rawValue().toBool());
-    source->setRtpJitterLatencyMs(static_cast<int>(std::min(rtpJitterLatencyMs()->rawValue().toUInt(), static_cast<uint>(INT_MAX))));
+    source->setRtpJitterLatencyMs(static_cast<int>(
+        std::min(rtpJitterLatencyMs()->rawValue().toUInt(), static_cast<uint>(INT_MAX))));
     source->setRtspAutoReconnect(rtspAutoReconnect()->rawValue().toBool());
+    source->setForceCpuVideoPath(forceCpuVideoPath()->rawValue().toBool());
+    source->setForceVideoDecoder(forceVideoDecoder()->rawValue().toInt());
 
     _additionalVideoSources.append(source);
     _saveAdditionalVideoSourceIds();
@@ -256,7 +319,8 @@ void VideoSettings::removeAdditionalVideoSource(int index)
         return;
     }
 
-    AdditionalVideoSourceSettings* source = qobject_cast<AdditionalVideoSourceSettings*>(_additionalVideoSources.removeAt(index));
+    AdditionalVideoSourceSettings* source =
+        qobject_cast<AdditionalVideoSourceSettings*>(_additionalVideoSources.removeAt(index));
     if (source) {
         source->removeSettings();
         source->deleteLater();
@@ -290,7 +354,8 @@ void VideoSettings::_saveAdditionalVideoSourceIds() const
     QStringList sourceIds;
     sourceIds.reserve(_additionalVideoSources.count());
     for (int i = 0; i < _additionalVideoSources.count(); ++i) {
-        const AdditionalVideoSourceSettings* source = qobject_cast<const AdditionalVideoSourceSettings*>(_additionalVideoSources[i]);
+        const AdditionalVideoSourceSettings* source =
+            qobject_cast<const AdditionalVideoSourceSettings*>(_additionalVideoSources[i]);
         if (source) {
             sourceIds.append(QString::number(source->sourceId()));
         }

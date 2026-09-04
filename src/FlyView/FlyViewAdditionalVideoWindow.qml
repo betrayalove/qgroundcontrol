@@ -20,6 +20,7 @@ Item {
     property bool streamSource: false
     property bool uvcSource: false
     property bool decoding: false
+    property double aspectRatio: QGroundControl.videoManager.aspectRatio
     property bool show: true
     property Item sizeReferenceItem: parent
     property Item fullReferenceItem: sizeReferenceItem
@@ -185,6 +186,7 @@ Item {
             streamSource:       root.streamSource
             uvcSource:          root.uvcSource && root._uvcCameraActive
             decoding:           root.decoding
+            aspectRatio:        root.aspectRatio
         }
     }
 

@@ -183,10 +183,16 @@ void VideoManager::init(QQuickWindow *mainWindow)
     (void) connect(_videoSettings->rtspUrl(), &Fact::rawValueChanged, this, &VideoManager::_videoSourceChanged);
     (void) connect(_videoSettings->tcpUrl(), &Fact::rawValueChanged, this, &VideoManager::_videoSourceChanged);
     (void) connect(_videoSettings->aspectRatio(), &Fact::rawValueChanged, this, &VideoManager::aspectRatioChanged);
-    (void) connect(_videoSettings->lowLatencyMode(), &Fact::rawValueChanged, this, [this](const QVariant &value) { Q_UNUSED(value); _restartAllVideos(); });
+    (void) connect(_videoSettings->lowLatencyMode(), &Fact::rawValueChanged, this, [this](const QVariant &value) {
+        Q_UNUSED(value);
+        _restartAllVideos();
+    });
     // rtpJitterLatencyMs needs a pipeline restart; route through _videoSourceChanged so _updateSettings
     // pushes the new value to each receiver and restarts exactly once (no double restart).
-    (void) connect(_videoSettings->rtpJitterLatencyMs(), &Fact::rawValueChanged, this, [this](const QVariant &value) { Q_UNUSED(value); _videoSourceChanged(); });
+    (void) connect(_videoSettings->rtpJitterLatencyMs(), &Fact::rawValueChanged, this, [this](const QVariant &value) {
+        Q_UNUSED(value);
+        _videoSourceChanged();
+    });
     // autoReconnect is a live setting — push without restart so an in-flight reconnect
     // can be cancelled mid-backoff.
     (void) connect(_videoSettings->rtspAutoReconnect(), &Fact::rawValueChanged, this, [this](const QVariant &value) {
@@ -356,7 +362,10 @@ void VideoManager::ensureAdditionalVideoReceiver(const QString &receiverName, Ma
     _updateAdditionalVideoReceiver(receiver);
 }
 
-void VideoManager::ensureAdditionalVideoSourceReceiver(const QString &receiverName, const QString &videoSource, const QString &uri, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect)
+void VideoManager::ensureAdditionalVideoSourceReceiver(const QString &receiverName, const QString &videoSource,
+                                                       const QString &uri, bool lowLatency, int rtpJitterLatencyMs,
+                                                       bool rtspAutoReconnect, bool disableWhenDisarmed,
+                                                       bool forceCpuVideoPath, int forceVideoDecoder)
 {
     if (!receiverName.startsWith(QLatin1String(kAdditionalVideoSourceReceiverPrefix))) {
         return;
@@ -369,6 +378,8 @@ void VideoManager::ensureAdditionalVideoSourceReceiver(const QString &receiverNa
             return;
         }
         receiver->setName(receiverName);
+        (void) _updateManualVideoSource(receiver, videoSource, uri, lowLatency, rtpJitterLatencyMs,
+                                        rtspAutoReconnect, disableWhenDisarmed, forceCpuVideoPath, forceVideoDecoder);
         _initVideoReceiver(receiver, _mainWindow);
         receiver = _findVideoReceiver(receiverName);
         if (!receiver) {
@@ -376,9 +387,16 @@ void VideoManager::ensureAdditionalVideoSourceReceiver(const QString &receiverNa
         }
     }
 
-    const bool changed = _updateManualVideoSource(receiver, videoSource, uri, lowLatency, rtpJitterLatencyMs, rtspAutoReconnect);
-    if (!_primaryVideoSourceEnabled() || receiver->uri().isEmpty()) {
+    const bool recreateSink = (receiver->forceCpuVideoPath() != forceCpuVideoPath) ||
+                              (receiver->forceVideoDecoder() != forceVideoDecoder);
+    const bool changed = _updateManualVideoSource(receiver, videoSource, uri, lowLatency, rtpJitterLatencyMs,
+                                                 rtspAutoReconnect, disableWhenDisarmed, forceCpuVideoPath,
+                                                 forceVideoDecoder);
+    const bool disabledWhenDisarmed = receiver->disableWhenDisarmed() && _activeVehicle && !_activeVehicle->armed();
+    if (!_primaryVideoSourceEnabled() || receiver->uri().isEmpty() || disabledWhenDisarmed) {
         _stopReceiver(receiver);
+    } else if (recreateSink && _recreateVideoSink(receiver)) {
+        _startReceiver(receiver);
     } else if (changed) {
         _restartVideo(receiver);
     } else if (!receiver->started()) {
@@ -803,6 +821,10 @@ bool VideoManager::_updateSettings(VideoReceiver *receiver)
 
     bool settingsChanged = false;
 
+    receiver->setDisableWhenDisarmed(_videoSettings->disableWhenDisarmed()->rawValue().toBool());
+    receiver->setForceCpuVideoPath(_videoSettings->forceCpuVideoPath()->rawValue().toBool());
+    receiver->setForceVideoDecoder(_videoSettings->forceVideoDecoder()->rawValue().toInt());
+
     const bool lowLatency = _videoSettings->lowLatencyMode()->rawValue().toBool();
     if (lowLatency != receiver->lowLatency()) {
         receiver->setLowLatency(lowLatency);
@@ -869,7 +891,9 @@ bool VideoManager::_updateSettings(VideoReceiver *receiver)
     return settingsChanged;
 }
 
-bool VideoManager::_updateManualVideoSource(VideoReceiver *receiver, const QString &videoSource, const QString &uri, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect)
+bool VideoManager::_updateManualVideoSource(VideoReceiver *receiver, const QString &videoSource, const QString &uri,
+                                            bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect,
+                                            bool disableWhenDisarmed, bool forceCpuVideoPath, int forceVideoDecoder)
 {
     if (!_isAdditionalVideoSourceReceiver(receiver)) {
         return false;
@@ -890,6 +914,20 @@ bool VideoManager::_updateManualVideoSource(VideoReceiver *receiver, const QStri
 
     if (rtspAutoReconnect != receiver->autoReconnect()) {
         receiver->setAutoReconnect(rtspAutoReconnect);
+    }
+
+    if (disableWhenDisarmed != receiver->disableWhenDisarmed()) {
+        receiver->setDisableWhenDisarmed(disableWhenDisarmed);
+    }
+
+    if (forceCpuVideoPath != receiver->forceCpuVideoPath()) {
+        receiver->setForceCpuVideoPath(forceCpuVideoPath);
+        settingsChanged = true;
+    }
+
+    if (forceVideoDecoder != receiver->forceVideoDecoder()) {
+        receiver->setForceVideoDecoder(forceVideoDecoder);
+        settingsChanged = true;
     }
 
     QString receiverUri;
@@ -1074,6 +1112,29 @@ void VideoManager::_restartVideo(VideoReceiver *receiver)
     }
 }
 
+bool VideoManager::_recreateVideoSink(VideoReceiver *receiver)
+{
+    if (!receiver || !receiver->widget()) {
+        return false;
+    }
+
+    _stopReceiver(receiver);
+    if (receiver->sink()) {
+        QGCCorePlugin::instance()->releaseVideoSink(receiver->sink());
+        receiver->setSink(nullptr);
+    }
+
+    void *sink = QGCCorePlugin::instance()->createVideoSink(receiver->widget(), receiver);
+    if (!sink) {
+        qCCritical(VideoManagerLog) << "createVideoSink() failed" << receiver->name();
+        return false;
+    }
+
+    receiver->setSink(sink);
+    VideoBackend::attachSink(receiver, sink, receiver->widget());
+    return true;
+}
+
 void VideoManager::_stopReceiver(VideoReceiver *receiver)
 {
     if (!receiver) {
@@ -1093,6 +1154,19 @@ void VideoManager::stopVideo()
     }
 }
 
+void VideoManager::stopVideoWhenDisarmed()
+{
+    if (_videoSettings->disableWhenDisarmed()->rawValue().toBool()) {
+        _videoSettings->streamEnabled()->setRawValue(false);
+    }
+
+    for (VideoReceiver *receiver : std::as_const(_videoReceivers)) {
+        if (receiver->disableWhenDisarmed()) {
+            _stopReceiver(receiver);
+        }
+    }
+}
+
 void VideoManager::_startReceiver(VideoReceiver *receiver)
 {
     if (!receiver) {
@@ -1108,6 +1182,15 @@ void VideoManager::_startReceiver(VideoReceiver *receiver)
     if (receiver->uri().isEmpty()) {
         qCDebug(VideoManagerLog) << "VideoUri is NULL" << receiver->name();
         return;
+    }
+
+    if (receiver->disableWhenDisarmed() && _activeVehicle && !_activeVehicle->armed()) {
+        qCDebug(VideoManagerLog) << "Video receiver disabled while disarmed" << receiver->name();
+        return;
+    }
+
+    if (VideoBackend::needsAsyncInit()) {
+        VideoBackend::applyDecoderPriorities(receiver->forceVideoDecoder());
     }
 
     const bool rtspReceiver = receiver->uri().startsWith(QLatin1String("rtsp://"), Qt::CaseInsensitive) ||
@@ -1131,8 +1214,8 @@ void VideoManager::_initVideoReceiver(VideoReceiver *receiver, QQuickWindow *win
         return;
     }
 
-    // Register before any setup so re-entry is blocked at every point below; error paths remove it.
     _videoReceivers.append(receiver);
+    (void) _updateSettings(receiver);
 
     QQuickItem *widget = window->findChild<QQuickItem*>(receiver->name());
     if (!widget) {

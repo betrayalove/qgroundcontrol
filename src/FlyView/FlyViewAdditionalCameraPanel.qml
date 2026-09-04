@@ -46,6 +46,7 @@ RowLayout {
 
             readonly property var camera: root._cameraManager ? root._cameraManager.cameras.get(index) : null
             readonly property bool isPrimaryCamera: root._cameraManager && index === root._cameraManager.currentCamera
+            readonly property var streamInfo: camera ? camera.currentStreamInstance : null
             readonly property string receiverName: root._receiverName(camera)
 
             Layout.alignment: Qt.AlignBottom
@@ -60,6 +61,7 @@ RowLayout {
             uvcSource: false
             streamEnabled: root._videoSettings.streamEnabled.rawValue
             decoding: root.receiverRevision >= 0 && QGroundControl.videoManager.receiverDecoding(receiverName)
+            aspectRatio: streamInfo ? streamInfo.aspectRatio : QGroundControl.videoManager.aspectRatio
 
             function updateReceiver() {
                 if (!receiverName) {
@@ -113,8 +115,10 @@ RowLayout {
             required property var object
 
             readonly property var source: object
-            readonly property bool isUvcSource: source && root._videoSettings.additionalVideoSourceIsUvc(source.videoSource)
-            readonly property bool usesUri: source && root._videoSettings.additionalVideoSourceUsesUri(source.videoSource)
+            readonly property bool isUvcSource: source
+                                                && root._videoSettings.additionalVideoSourceIsUvc(source.videoSource)
+            readonly property bool usesUri: source
+                                           && root._videoSettings.additionalVideoSourceUsesUri(source.videoSource)
             readonly property bool hasConfiguredSource: source && (isUvcSource || !usesUri || source.uri !== "")
             readonly property string receiverName: source ? source.receiverName : ""
 
@@ -130,7 +134,10 @@ RowLayout {
             streamSource: !isUvcSource
             uvcSource: root._videoEnabled && isUvcSource && hasConfiguredSource
             streamEnabled: root._videoEnabled
-            decoding: isUvcSource ? hasConfiguredSource : (root.receiverRevision >= 0 && QGroundControl.videoManager.receiverDecoding(receiverName))
+            decoding: isUvcSource ? hasConfiguredSource
+                                   : (root.receiverRevision >= 0
+                                      && QGroundControl.videoManager.receiverDecoding(receiverName))
+            aspectRatio: source ? source.aspectRatio : QGroundControl.videoManager.aspectRatio
 
             function updateReceiver() {
                 if (!source || !receiverName) {
@@ -147,7 +154,10 @@ RowLayout {
                                                                                 source.uri,
                                                                                 source.lowLatencyMode,
                                                                                 source.rtpJitterLatencyMs,
-                                                                                source.rtspAutoReconnect)
+                                                                                source.rtspAutoReconnect,
+                                                                                source.disableWhenDisarmed,
+                                                                                source.forceCpuVideoPath,
+                                                                                source.forceVideoDecoder)
             }
 
             Component.onCompleted: updateReceiver()
@@ -181,6 +191,9 @@ RowLayout {
                 function onLowLatencyModeChanged() { manualSourceDelegate.updateReceiver() }
                 function onRtpJitterLatencyMsChanged() { manualSourceDelegate.updateReceiver() }
                 function onRtspAutoReconnectChanged() { manualSourceDelegate.updateReceiver() }
+                function onDisableWhenDisarmedChanged() { manualSourceDelegate.updateReceiver() }
+                function onForceCpuVideoPathChanged() { manualSourceDelegate.updateReceiver() }
+                function onForceVideoDecoderChanged() { manualSourceDelegate.updateReceiver() }
             }
         }
     }
@@ -188,7 +201,8 @@ RowLayout {
     Connections {
         target: QGroundControl.videoManager
         function onReceiverDecodingChanged(receiverName) {
-            if (receiverName.startsWith("additionalVideoContent_") || receiverName.startsWith("additionalVideoSource_")) {
+            if (receiverName.startsWith("additionalVideoContent_")
+                    || receiverName.startsWith("additionalVideoSource_")) {
                 root.receiverRevision++
             }
         }

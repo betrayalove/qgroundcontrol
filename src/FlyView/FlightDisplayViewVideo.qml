@@ -17,10 +17,11 @@ Item {
     property bool streamSource: QGroundControl.videoManager.isStreamSource
     property bool uvcSource: QGroundControl.videoManager.isUvc
     property bool decoding: QGroundControl.videoManager.decoding
+    property double aspectRatio: QGroundControl.videoManager.aspectRatio
 
     property double _ar:                (cameraLoader.visible && cameraLoader.status === Loader.Ready)
                                             ? cameraLoader.item.implicitWidth / cameraLoader.item.implicitHeight
-                                            : QGroundControl.videoManager.aspectRatio
+                                            : aspectRatio
     property bool   _showGrid:          QGroundControl.settingsManager.videoSettings.gridLines.rawValue
     property var    _dynamicCameras:    globals.activeVehicle ? globals.activeVehicle.cameraManager : null
     property bool   _connected:         globals.activeVehicle ? !globals.activeVehicle.communicationLost : false

@@ -11,6 +11,7 @@
 #include "GStreamerHelpers.h"
 #include "SettingsManager.h"
 #include "VideoSettings.h"
+#include "VideoReceiver.h"
 #include "Fact.h"
 #else
 #include "QtMultimediaReceiver.h"
@@ -60,11 +61,13 @@ void *VideoBackend::createSink(QQuickItem *widget, QObject *parent)
     Q_UNUSED(widget);
     Q_UNUSED(parent);
     VideoSettings *const vs = SettingsManager::instance()->videoSettings();
+    const VideoReceiver *const receiver = qobject_cast<const VideoReceiver*>(parent);
+    const int forceDecoder = receiver ? receiver->forceVideoDecoder() : vs->forceVideoDecoder()->rawValue().toInt();
     GStreamer::VideoSinkConfig config;
     config.conversionElement = vs->videoConversionElement()->rawValue().toString().toUtf8();
     config.disablePixelAspectRatio = vs->disablePixelAspectRatio()->rawValue().toBool();
-    const bool forceCpu = vs->forceCpuVideoPath()->rawValue().toBool();
-    const bool swDecoder = vs->forceVideoDecoder()->rawValue().toInt() == GStreamer::ForceVideoDecoderSoftware;
+    const bool forceCpu = receiver ? receiver->forceCpuVideoPath() : vs->forceCpuVideoPath()->rawValue().toBool();
+    const bool swDecoder = forceDecoder == GStreamer::ForceVideoDecoderSoftware;
     config.gpuZeroCopy = gpuZeroCopyAllowedForCurrentGraphicsApi(forceCpu, swDecoder);
     return GStreamer::createVideoSink(config);
 #else

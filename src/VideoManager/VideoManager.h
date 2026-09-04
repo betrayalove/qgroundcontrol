@@ -62,7 +62,10 @@ public:
     Q_INVOKABLE void stopRecording();
     Q_INVOKABLE void stopVideo();
     Q_INVOKABLE void ensureAdditionalVideoReceiver(const QString &receiverName, MavlinkCameraControlInterface *camera);
-    Q_INVOKABLE void ensureAdditionalVideoSourceReceiver(const QString &receiverName, const QString &videoSource, const QString &uri, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect);
+    Q_INVOKABLE void ensureAdditionalVideoSourceReceiver(const QString &receiverName, const QString &videoSource,
+                                                         const QString &uri, bool lowLatency, int rtpJitterLatencyMs,
+                                                         bool rtspAutoReconnect, bool disableWhenDisarmed,
+                                                         bool forceCpuVideoPath, int forceVideoDecoder);
     Q_INVOKABLE void restartAdditionalVideoReceiver(const QString &receiverName);
     Q_INVOKABLE void releaseAdditionalVideoReceiver(const QString &receiverName);
     Q_INVOKABLE bool receiverDecoding(const QString &receiverName) const;
@@ -88,6 +91,7 @@ public:
     QString imageFile() const { return _imageFile; }
     QString uvcVideoSourceID() const { return _uvcVideoSourceID; }
     void setfullScreen(bool on);
+    void stopVideoWhenDisarmed();
 
 signals:
     void aspectRatioChanged();
@@ -128,7 +132,9 @@ private:
     bool _updateAutoStream(VideoReceiver *receiver);
     bool _updateUVC(VideoReceiver *receiver);
     bool _updateSettings(VideoReceiver *receiver);
-    bool _updateManualVideoSource(VideoReceiver *receiver, const QString &videoSource, const QString &uri, bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect);
+    bool _updateManualVideoSource(VideoReceiver *receiver, const QString &videoSource, const QString &uri,
+                                  bool lowLatency, int rtpJitterLatencyMs, bool rtspAutoReconnect,
+                                  bool disableWhenDisarmed, bool forceCpuVideoPath, int forceVideoDecoder);
     bool _updateVideoUri(VideoReceiver *receiver, const QString &uri);
     bool _isPrimaryVideoReceiver(const VideoReceiver *receiver) const;
     bool _isAdditionalCameraVideoReceiver(const VideoReceiver *receiver) const;
@@ -138,6 +144,7 @@ private:
     VideoReceiver *_findVideoReceiver(const QString &receiverName) const;
     void _restartAllVideos();
     void _restartVideo(VideoReceiver *receiver);
+    bool _recreateVideoSink(VideoReceiver *receiver);
     void _startReceiver(VideoReceiver *receiver);
     void _stopReceiver(VideoReceiver *receiver);
     void _updateAdditionalVideoReceiver(VideoReceiver *receiver);

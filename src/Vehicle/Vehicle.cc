@@ -1228,10 +1228,7 @@ void Vehicle::_updateArmed(bool armed)
             _trajectoryPoints->stop();
             _flightTimerStop();
             // Also handle Video Streaming
-            if(SettingsManager::instance()->videoSettings()->disableWhenDisarmed()->rawValue().toBool()) {
-                SettingsManager::instance()->videoSettings()->streamEnabled()->setRawValue(false);
-                VideoManager::instance()->stopVideo();
-            }
+            VideoManager::instance()->stopVideoWhenDisarmed();
         }
     }
 }
